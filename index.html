@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AeroQuest Live Scoreboard · Aerowis Aviation</title>
+  <meta name="description" content="Live scores for AeroQuest by Aerowis Aviation — 5 batches, 1 month, 1 champion." />
+  <meta name="theme-color" content="#050a1f" />
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,400;0,600;0,800;1,800;1,900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- Decorative background: HUD instruments, grid, runway lights -->
+  <div class="bg" aria-hidden="true">
+    <div class="bg-hero"></div>
+    <div class="bg-grid"></div>
+    <svg class="hud hud-left" viewBox="0 0 200 400">
+      <path d="M190 20 A180 180 0 0 0 190 380" />
+      <path d="M170 60 A140 140 0 0 0 170 340" class="thin" />
+      <g class="ticks">
+        <text x="40" y="60">360</text><text x="14" y="130">270</text>
+        <text x="8" y="205">180</text><text x="14" y="280">90</text><text x="40" y="350">0</text>
+      </g>
+    </svg>
+    <svg class="hud hud-right" viewBox="0 0 200 400">
+      <path d="M10 20 A180 180 0 0 1 10 380" />
+      <path d="M30 60 A140 140 0 0 1 30 340" class="thin" />
+      <g class="ticks">
+        <text x="90" y="60">HDG 360</text><text x="110" y="205">ALT 35000</text><text x="90" y="350">SPD 280</text>
+      </g>
+    </svg>
+    <div class="runway"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  </div>
+
+  <header class="masthead">
+    <img class="brand-logo" src="assets/logo.png" alt="Aerowis Aviation" />
+    <h1 class="title"><span>AEROQUEST</span></h1>
+    <p class="by"><span></span>BY AEROWIS<span></span></p>
+    <div class="live-pill" id="livePill"><i></i><b id="liveText">LIVE SCOREBOARD</b></div>
+  </header>
+
+  <main class="board">
+    <section class="podium" id="podium" aria-label="Top 3"></section>
+    <section class="runners" id="runners" aria-label="4th and 5th place"></section>
+    <section class="standings" id="standingsWrap" hidden>
+      <h2 class="section-title"><span></span>FULL STANDINGS<span></span></h2>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Rank</th><th>Team</th><th class="num">Score</th></tr></thead>
+          <tbody id="standings"></tbody>
+        </table>
+      </div>
+    </section>
+    <p class="empty" id="empty" hidden>Teams are taxiing to the runway… scores will appear here soon.</p>
+  </main>
+
+  <footer class="footer">
+    <p class="tagline">KNOWLEDGE <i>•</i> PRECISION <i>•</i> DISCIPLINE <i>•</i> TEAMWORK</p>
+    <p class="events">SIM FLYING <i>|</i> QUIZ BOWL <i>|</i> ACADEMIC CHALLENGE</p>
+    <p class="copy">© Aerowis Aviation · AeroQuest
+      <button class="admin-link" id="adminLink" title="Crew access" aria-label="Admin login">✈</button>
+    </p>
+  </footer>
+
+  <!-- Admin panel -->
+  <div class="overlay" id="overlay" hidden>
+    <div class="panel" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
+      <button class="close" id="closePanel" aria-label="Close">×</button>
+
+      <form class="login" id="loginForm" autocomplete="on">
+        <img src="assets/logo.png" alt="" class="login-logo" />
+        <h2 id="panelTitle">Crew Access</h2>
+        <p class="hint" id="demoHint" hidden>Demo mode: Firebase isn't configured yet, so any email/password works and data is saved in this browser only.</p>
+        <label>Email<input type="email" id="email" required autocomplete="username" /></label>
+        <label>Password<input type="password" id="password" required autocomplete="current-password" /></label>
+        <p class="error" id="loginError" role="alert"></p>
+        <button type="submit" class="btn primary" id="loginBtn">Sign in</button>
+      </form>
+
+      <div class="admin" id="adminView" hidden>
+        <div class="admin-head">
+          <h2>Mission Control</h2>
+          <div class="admin-actions">
+            <span class="who" id="who"></span>
+            <button class="btn ghost" id="logoutBtn">Sign out</button>
+          </div>
+        </div>
+        <form class="add-team" id="addForm">
+          <input id="newName" placeholder="New team name, e.g. Batch 06" maxlength="40" required />
+          <button class="btn primary" type="submit">+ Add team</button>
+        </form>
+        <p class="error" id="adminError" role="alert"></p>
+        <ul class="admin-list" id="adminList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="photoInput" accept="image/*" hidden />
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
