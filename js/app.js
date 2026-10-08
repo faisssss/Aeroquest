@@ -1,4 +1,4 @@
-import { createStore, isDemo } from "./store.js";
+import { createStore, isDemo, validUsername } from "./store.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -10,7 +10,9 @@ const CROWN_SVG =
 
 let store;
 let teams = [];
-let user = null;
+let user = null; // signed-in admin, or null
+let authUser = null; // whoever is signed in to Firebase
+let owner; // { uid, username } of the one admin; null = not set up yet; undefined = still loading
 const prevScores = new Map();
 
 // ---------- helpers ----------
@@ -136,7 +138,10 @@ function friendly(err) {
   const code = err?.code || "";
   if (code.includes("permission-denied")) return "This account isn't an admin. Ask the organiser to add it to the admins list.";
   if (code.includes("invalid-credential") || code.includes("wrong-password") || code.includes("user-not-found"))
-    return "Wrong email or password.";
+    return "Wrong username or password.";
+  if (code.includes("email-already-in-use")) return "That username is taken — pick another.";
+  if (code.includes("weak-password")) return "Password must be at least 6 characters.";
+  if (code === "admin-exists") return "An admin account already exists.";
   if (code.includes("too-many-requests")) return "Too many attempts — wait a minute and try again.";
   if (code.includes("network")) return "Network problem — check your connection.";
   return err?.message || "Something went wrong.";
@@ -249,16 +254,32 @@ function resizePhoto(file) {
 
 function openPanel() {
   $("overlay").hidden = false;
-  if (!user) $("email").focus();
+  if (!user) $("username").focus();
 }
 function closePanel() { $("overlay").hidden = true; }
 
-function setUser(u) {
-  user = u;
-  $("loginForm").hidden = !!u;
-  $("adminView").hidden = !u;
-  $("who").textContent = u?.email || "";
-  if (u) renderAdmin();
+const setupMode = () => owner === null;
+
+// Show the admin panel only to the account named in config/admin
+function refreshAuth() {
+  const isAdmin = !!authUser && !!owner && owner.uid === authUser.uid;
+  if (authUser && owner && !isAdmin) {
+    showError("loginError", "This account isn't the AeroQuest admin.");
+    store.logout();
+  }
+  user = isAdmin ? authUser : null;
+  const setup = setupMode();
+  $("loginForm").hidden = !!user;
+  $("adminView").hidden = !user;
+  $("who").textContent = user ? `Signed in as ${user.username}` : "";
+  $("panelTitle").textContent = setup ? "Create Admin Account" : "Crew Access";
+  $("setupHint").hidden = !setup;
+  $("confirmWrap").hidden = !setup;
+  $("confirm").required = setup;
+  $("password").autocomplete = setup ? "new-password" : "current-password";
+  $("loginBtn").textContent = setup ? "Create admin & sign in" : "Sign in";
+  $("loginBtn").disabled = owner === undefined;
+  if (user) renderAdmin();
 }
 
 function wireUI() {
@@ -276,11 +297,17 @@ function wireUI() {
   $("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = $("loginBtn");
-    btn.disabled = true;
+    const username = $("username").value.trim().toLowerCase();
+    const password = $("password").value;
     $("loginError").textContent = "";
+    if (!validUsername(username))
+      return showError("loginError", "Username: 3–30 letters or numbers (. _ - allowed), no spaces.");
+    if (setupMode() && password !== $("confirm").value) return showError("loginError", "Passwords don't match.");
+    btn.disabled = true;
     try {
-      await store.login($("email").value.trim(), $("password").value);
+      await (setupMode() ? store.setupAdmin(username, password) : store.login(username, password));
       $("password").value = "";
+      $("confirm").value = "";
     } catch (err) {
       showError("loginError", err);
     } finally {
@@ -331,7 +358,8 @@ async function main() {
       $("liveText").textContent = "RECONNECTING…";
     },
   );
-  store.onAuth(setUser);
+  store.watchAdmin((o) => { owner = o; refreshAuth(); });
+  store.onAuth((u) => { authUser = u; refreshAuth(); });
 }
 
 main();

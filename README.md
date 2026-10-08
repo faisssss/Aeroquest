@@ -8,13 +8,13 @@ It is a static site (HTML/CSS/JS, no build step) hosted on **Firebase Hosting**.
 - **Ctrl/Cmd + Shift + A**
 - adding `#admin` to the end of the URL
 
-Admins can add up to 5 teams, rename them, upload team photos (auto-cropped to a square), and change scores with −10/−5/−1/+1/+5/+10 buttons or by typing an exact value.
+The first time it's opened it asks you to create the one admin username and password. After that, the admin can add up to 5 teams, rename them, upload team photos (auto-cropped to a square), and change scores with −10/−5/−1/+1/+5/+10 buttons or by typing an exact value.
 
 ## Demo mode
 
 While `js/firebase-config.js` is empty, the site runs in demo mode:
 - It shows 5 sample batches.
-- Any email and password logs you in.
+- The admin login is stored only in that browser.
 - Changes are saved only in that browser.
 
 To try it locally, run `python3 -m http.server 8000` in this folder and open http://localhost:8000.
@@ -40,19 +40,7 @@ To try it locally, run `python3 -m http.server 8000` in this folder and open htt
    1. In the left menu, go to **Security → Authentication → Get started**. You can also search for `Authentication`. Older consoles call this **Build → Authentication**.
    2. On the **Sign-in method** tab, click **Email/Password**, switch on the first toggle (**Enable**), and click **Save**.
 
-4. **Create the admin account(s)**
-   1. On the **Users** tab, click **Add user**.
-   2. Enter the admin's email and a strong password, then click **Add user**.
-   3. In the user list, copy that user's **User UID** (a long code like `Xk9f2...`).
-
-5. **Mark the account as an admin.** Only accounts listed here can change scores.
-   1. Go to **Databases and storage → Firestore → Data → + Start collection**.
-   2. For **Collection ID**, type `admins` and click **Next**.
-   3. For **Document ID**, paste the **User UID** from step 4.
-   4. Add one field: name `role`, type `string`, value `admin`. Click **Save**.
-   5. For more admins, repeat steps 4 and 5. Inside the `admins` collection, use **+ Add document**.
-
-6. **Connect the website to the project**
+4. **Connect the website to the project**
    1. Click the ⚙ next to **Project Overview**, then go to **Project settings → General**.
    2. Under **Your apps**, click the **`</>`** (Web) icon.
    3. Enter the nickname `aeroquest-web`. Leave "Firebase Hosting" unticked and click **Register app**.
@@ -60,15 +48,15 @@ To try it locally, run `python3 -m http.server 8000` in this folder and open htt
 
 ### Part B: Upload the website (from your computer, one time)
 
-7. **Install Node.js:** download the **LTS** version from <https://nodejs.org> and install it.
+5. **Install Node.js:** download the **LTS** version from <https://nodejs.org> and install it.
 
-8. **Get the code** onto your computer. Either:
+6. **Get the code** onto your computer. Either:
    - download the branch as a ZIP from GitHub (**Code → Download ZIP**) and unzip it, or
    - run `git clone -b claude/quiz-app-live-score-ndvpya https://github.com/faisssss/Aeroquest.git`
 
-   Make sure the `js/firebase-config.js` there contains your values from step 6.
+   Make sure the `js/firebase-config.js` there contains your values from step 4.
 
-9. **Open a terminal in that folder.** On Windows, use **Shift + right-click** in the folder and choose **Open PowerShell window here**. On Mac, right-click the folder and choose **New Terminal at Folder**. Then run:
+7. **Open a terminal in that folder.** On Windows, use **Shift + right-click** in the folder and choose **Open PowerShell window here**. On Mac, right-click the folder and choose **New Terminal at Folder**. Then run:
 
    ```sh
    npm install -g firebase-tools
@@ -85,12 +73,20 @@ To try it locally, run `python3 -m http.server 8000` in this folder and open htt
 
 ### Part C: First use
 
-10. Open `https://<project-id>.web.app`, click the faint ✈ at the bottom, and sign in with the admin account.
-11. Add the **5 batches**. Click each team's circle to upload its photo, and set the starting scores.
-12. On event day, open the site on the projector or TV and press **F11** for full screen. Admins update scores from a phone or laptop, and the big screen updates within a second.
+8. Open `https://<project-id>.web.app` and click the faint ✈ at the bottom. The first time, it shows **Create Admin Account**. Choose a username and password and click **Create admin & sign in**. That account is now the **only** admin, and from then on the ✈ shows a normal sign-in screen.
+   > Do this right after deploying. Until an admin account is created, whoever opens the ✈ first gets to create it.
+9. Add the **5 batches**. Click each team's circle to upload its photo, and set the starting scores.
+10. On event day, open the site on the projector or TV and press **F11** for full screen. Admins update scores from a phone or laptop, and the big screen updates within a second.
 
 ### Updating the site later
 Edit the files, then run `firebase deploy` again from the same folder. Scores and teams are kept, because they live in the database, not in the files.
+
+### Forgot the admin password / need to change the admin
+In the Firebase console:
+1. Go to **Databases and storage → Firestore → Data → `config` → `admin`** and delete that document.
+2. Go to **Security → Authentication → Users** and delete the old user.
+
+Then open the ✈ on the site again. It will show **Create Admin Account**.
 
 ### Optional: custom domain
 In the Firebase console, go to **Hosting → Add custom domain** (for example `aeroquest.aerowis.com`) and follow the DNS steps it shows.

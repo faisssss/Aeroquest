@@ -7,6 +7,11 @@ const FB = "https://www.gstatic.com/firebasejs/10.12.2";
 
 export const isDemo = !firebaseConfig.apiKey;
 
+// Firebase logins need an email, so a username is turned into a private fake address.
+// Nothing is ever emailed to it.
+const toEmail = (username) => `${username}@aeroquest-admin.com`;
+export const validUsername = (u) => /^[a-z0-9._-]{3,30}$/.test(u);
+
 export async function createStore() {
   return isDemo ? createDemoStore() : createFirebaseStore();
 }
@@ -21,8 +26,24 @@ async function createFirebaseStore() {
   const db = fs.getFirestore(app);
   const auth = au.getAuth(app);
   const teams = fs.collection(db, "teams");
+  // Single document naming the one admin. Firestore rules let it be created once, by the person it names.
+  const ownerDoc = fs.doc(db, "config", "admin");
 
   return {
+    watchAdmin(cb) {
+      return fs.onSnapshot(ownerDoc, (snap) => cb(snap.exists() ? snap.data() : null), () => cb(null));
+    },
+    async setupAdmin(username, password) {
+      let cred;
+      try {
+        cred = await au.createUserWithEmailAndPassword(auth, toEmail(username), password);
+      } catch (err) {
+        // A previous attempt may have created the login but not the admin record; finish it.
+        if (err.code !== "auth/email-already-in-use") throw err;
+        cred = await au.signInWithEmailAndPassword(auth, toEmail(username), password);
+      }
+      await fs.setDoc(ownerDoc, { uid: cred.user.uid, username });
+    },
     subscribe(onTeams, onError) {
       return fs.onSnapshot(
         teams,
@@ -31,9 +52,9 @@ async function createFirebaseStore() {
       );
     },
     onAuth(cb) {
-      return au.onAuthStateChanged(auth, (u) => cb(u ? { email: u.email } : null));
+      return au.onAuthStateChanged(auth, (u) => cb(u ? { uid: u.uid, username: u.email.split("@")[0] } : null));
     },
-    login: (email, password) => au.signInWithEmailAndPassword(auth, email, password),
+    login: (username, password) => au.signInWithEmailAndPassword(auth, toEmail(username), password),
     logout: () => au.signOut(auth),
     addTeam: (name) => fs.addDoc(teams, { name, score: 0, photo: "", createdAt: Date.now() }),
     updateTeam: (id, fields) => fs.updateDoc(fs.doc(db, "teams", id), fields),
@@ -43,7 +64,8 @@ async function createFirebaseStore() {
 }
 
 const KEY = "aeroquest-demo-teams-v2";
-const AUTH_KEY = "aeroquest-demo-admin";
+const AUTH_KEY = "aeroquest-demo-session";
+const OWNER_KEY = "aeroquest-demo-owner";
 
 const SAMPLE = [
   ["Batch 01 · Falcons", 1240],
@@ -69,26 +91,39 @@ function createDemoStore() {
     try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
     emit();
   };
-  const user = () => {
-    try { return localStorage.getItem(AUTH_KEY) ? { email: localStorage.getItem(AUTH_KEY) } : null; } catch { return null; }
-  };
+  const ownerListeners = new Set();
+  const get = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+  const set = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} };
+  const owner = () => { try { return JSON.parse(get(OWNER_KEY)); } catch { return null; } };
+  const user = () => (get(AUTH_KEY) ? { uid: get(AUTH_KEY), username: get(AUTH_KEY) } : null);
+  const emitAuth = () => authListeners.forEach((cb) => cb(user()));
+  const emitOwner = () => ownerListeners.forEach((cb) => cb(owner() && { uid: owner().username, username: owner().username }));
   addEventListener("storage", (e) => {
     if (e.key === KEY) { data = read(); emit(); }
-    if (e.key === AUTH_KEY) authListeners.forEach((cb) => cb(user()));
+    if (e.key === AUTH_KEY) emitAuth();
+    if (e.key === OWNER_KEY) emitOwner();
   });
   const patch = (id, fn) => { data = data.map((t) => (t.id === id ? fn({ ...t }) : t)); save(); };
 
   return {
     subscribe(cb) { listeners.add(cb); cb(structuredClone(data)); return () => listeners.delete(cb); },
     onAuth(cb) { authListeners.add(cb); cb(user()); return () => authListeners.delete(cb); },
-    async login(email) {
-      try { localStorage.setItem(AUTH_KEY, email); } catch {}
-      authListeners.forEach((cb) => cb(user() || { email }));
+    watchAdmin(cb) { ownerListeners.add(cb); emitOwner(); return () => ownerListeners.delete(cb); },
+    // Demo only: credentials live in this browser's storage. The real site uses Firebase Auth.
+    async setupAdmin(username, password) {
+      if (owner()) throw { code: "admin-exists" };
+      set(OWNER_KEY, JSON.stringify({ username, password }));
+      set(AUTH_KEY, username);
+      emitOwner();
+      emitAuth();
     },
-    async logout() {
-      try { localStorage.removeItem(AUTH_KEY); } catch {}
-      authListeners.forEach((cb) => cb(null));
+    async login(username, password) {
+      const o = owner();
+      if (!o || o.username !== username || o.password !== password) throw { code: "auth/invalid-credential" };
+      set(AUTH_KEY, username);
+      emitAuth();
     },
+    async logout() { set(AUTH_KEY, null); emitAuth(); },
     async addTeam(name) {
       data.push({ id: `t${Date.now()}`, name, score: 0, photo: "", createdAt: Date.now() });
       save();
