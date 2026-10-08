@@ -42,7 +42,7 @@ async function createFirebaseStore() {
   };
 }
 
-const KEY = "aeroquest-demo-teams";
+const KEY = "aeroquest-demo-teams-v2";
 const AUTH_KEY = "aeroquest-demo-admin";
 
 const SAMPLE = [
@@ -51,9 +51,6 @@ const SAMPLE = [
   ["Batch 03 · Skyhawks", 1310],
   ["Batch 04 · Jetstream", 960],
   ["Batch 05 · Mach One", 1025],
-  ["Instructors XI", 870],
-  ["Ground Crew", 745],
-  ["Alumni Squadron", 690],
 ];
 
 function createDemoStore() {

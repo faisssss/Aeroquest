@@ -45,15 +45,6 @@
   <main class="board">
     <section class="podium" id="podium" aria-label="Top 3"></section>
     <section class="runners" id="runners" aria-label="4th and 5th place"></section>
-    <section class="standings" id="standingsWrap" hidden>
-      <h2 class="section-title"><span></span>FULL STANDINGS<span></span></h2>
-      <div class="table-wrap">
-        <table class="table">
-          <thead><tr><th>Rank</th><th>Team</th><th class="num">Score</th></tr></thead>
-          <tbody id="standings"></tbody>
-        </table>
-      </div>
-    </section>
     <p class="empty" id="empty" hidden>Teams are taxiing to the runway… scores will appear here soon.</p>
   </main>
 
@@ -89,7 +80,7 @@
           </div>
         </div>
         <form class="add-team" id="addForm">
-          <input id="newName" placeholder="New team name, e.g. Batch 06" maxlength="40" required />
+          <input id="newName" placeholder="Team name, e.g. Batch 01" maxlength="40" required />
           <button class="btn primary" type="submit">+ Add team</button>
         </form>
         <p class="error" id="adminError" role="alert"></p>

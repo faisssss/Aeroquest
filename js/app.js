@@ -2,6 +2,9 @@ import { createStore, isDemo } from "./store.js";
 
 const $ = (id) => document.getElementById(id);
 
+// AeroQuest has exactly 5 batches: top 3 on the podium, 4th and 5th below.
+const MAX_TEAMS = 5;
+
 const CROWN_SVG =
   '<svg class="crown" viewBox="0 0 64 48" aria-hidden="true"><path fill="currentColor" d="M4 14l14 12L32 4l14 22 14-12-6 30H10z"/><rect x="10" y="40" width="44" height="6" rx="2" fill="currentColor"/></svg>';
 
@@ -81,21 +84,16 @@ function animateScore(container, scoreNode, team) {
   countUp(scoreNode, before, team.score);
   container.classList.add("bump");
   const diff = team.score - before;
-  if (container.tagName !== "TR") {
-    const d = el("span", "delta" + (diff < 0 ? " neg" : ""), (diff > 0 ? "+" : "") + fmt(diff));
-    container.append(d);
-  }
+  container.append(el("span", "delta" + (diff < 0 ? " neg" : ""), (diff > 0 ? "+" : "") + fmt(diff)));
 }
 
 // ---------- public scoreboard ----------
 function renderBoard() {
-  const list = ranked(teams);
+  const list = ranked(teams).slice(0, MAX_TEAMS);
   const podium = $("podium");
   const runners = $("runners");
-  const tbody = $("standings");
   podium.replaceChildren();
   runners.replaceChildren();
-  tbody.replaceChildren();
   $("empty").hidden = list.length > 0;
 
   list.slice(0, 3).forEach((t, i) => {
@@ -118,20 +116,6 @@ function renderBoard() {
     card.append(el("div", "rank-badge", String(t.rank)), avatar(t), el("h3", "name", t.name), right);
     animateScore(card, score, t);
     runners.append(card);
-  });
-
-  const rest = list.slice(5);
-  $("standingsWrap").hidden = rest.length === 0;
-  rest.forEach((t) => {
-    const tr = el("tr");
-    const team = el("div", "team");
-    team.append(avatar(t), el("span", null, t.name));
-    const tdTeam = el("td");
-    tdTeam.append(team);
-    const tdScore = el("td", "num");
-    tr.append(el("td", "rank", `#${t.rank}`), tdTeam, tdScore);
-    animateScore(tr, tdScore, t);
-    tbody.append(tr);
   });
 
   prevScores.clear();
@@ -239,6 +223,7 @@ function renderAdmin() {
     ul.append(r.li); // re-append keeps rows in rank order without rebuilding inputs
   });
   for (const [id, r] of rows) if (!seen.has(id)) { r.li.remove(); rows.delete(id); }
+  $("addForm").hidden = list.length >= MAX_TEAMS;
 }
 
 // Shrink an image to a 256px square JPEG data URL so it fits comfortably in Firestore
@@ -264,7 +249,7 @@ function resizePhoto(file) {
 
 function openPanel() {
   $("overlay").hidden = false;
-  (user ? $("newName") : $("email")).focus();
+  if (!user) $("email").focus();
 }
 function closePanel() { $("overlay").hidden = true; }
 
@@ -306,7 +291,7 @@ function wireUI() {
   $("addForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const name = $("newName").value.trim();
-    if (!name) return;
+    if (!name || teams.length >= MAX_TEAMS) return;
     run(store.addTeam(name).then(() => { $("newName").value = ""; }));
   });
   $("photoInput").addEventListener("change", async () => {

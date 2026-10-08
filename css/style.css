@@ -216,33 +216,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .runners .score { text-align: right; font-family: var(--font-display); font-weight: 900; font-style: italic; font-size: 40px; line-height: 1; }
 .runners .pts { font-size: 11px; letter-spacing: .25em; }
 
-/* Standings table (6th onwards) */
-.standings { margin-top: 36px; }
-.section-title {
-  display: flex; align-items: center; justify-content: center; gap: 14px;
-  margin: 0 0 14px; font-family: var(--font-display); font-weight: 600; font-size: 18px;
-  letter-spacing: .3em; color: var(--cyan-2);
-}
-.section-title span { flex: 0 1 120px; height: 1px; background: linear-gradient(90deg, transparent, var(--cyan)); }
-.section-title span:last-child { transform: scaleX(-1); }
-.table-wrap { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--panel); backdrop-filter: blur(8px); }
-.table { width: 100%; border-collapse: collapse; }
-.table th {
-  text-align: left; padding: 12px 20px; font-size: 13px; letter-spacing: .25em; text-transform: uppercase;
-  color: var(--muted); background: rgba(31, 120, 255, .08); border-bottom: 1px solid var(--line);
-}
-.table td { padding: 10px 20px; border-bottom: 1px solid rgba(64, 160, 255, .12); font-size: 20px; font-weight: 600; }
-.table tr:last-child td { border-bottom: 0; }
-.table tbody tr { transition: background .3s; }
-.table tbody tr:hover { background: rgba(31, 120, 255, .08); }
-.table tbody tr.bump { animation: row-bump 1s ease; }
-@keyframes row-bump { 30% { background: rgba(31, 182, 255, .25); } }
-.table .num { text-align: right; }
-.table .rank { width: 90px; font-family: var(--font-display); font-weight: 800; font-style: italic; color: var(--cyan-2); }
-.table .team { display: flex; align-items: center; gap: 12px; }
-.table .avatar { width: 38px; height: 38px; font-size: 14px; border-width: 1px; }
-.table td.num { font-family: var(--font-display); font-weight: 800; font-size: 22px; }
-
 .empty { text-align: center; color: var(--muted); font-size: 20px; padding: 60px 0; }
 
 /* ---------- Footer ---------- */
@@ -343,10 +316,7 @@ input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(31, 182, 255
   .runners .rank-badge { width: 30px; font-size: 26px; }
   .runners .name { font-size: 17px; }
   .runners .score { font-size: 30px; }
-  .table th, .table td { padding: 10px 12px; }
-  .table .rank { width: 56px; }
   .tagline, .events { letter-spacing: .12em; font-size: 12px; }
-  .section-title { letter-spacing: .18em; font-size: 15px; white-space: nowrap; }
   .panel { padding: 22px 16px; }
   .admin-row { grid-template-columns: auto 1fr; }
   .row-side { grid-column: 1 / -1; grid-auto-flow: column; justify-content: space-between; align-items: center; }
