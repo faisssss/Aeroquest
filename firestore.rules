@@ -1,12 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // The one admin is whoever created config/admin (done from the site's
-    // "Create Admin Account" screen the first time it's opened).
+    // The one admin login ("Admin" on the site). Firebase Auth checks the password.
     function isAdmin() {
       return request.auth != null
-        && exists(/databases/$(database)/documents/config/admin)
-        && get(/databases/$(database)/documents/config/admin).data.uid == request.auth.uid;
+        && request.auth.token.email == 'admin@aeroquest-admin.com';
     }
 
     // Everyone can watch the scoreboard; only the admin can change it.
@@ -22,15 +20,5 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Can be created exactly once, by a signed-in user naming themselves.
-    // To reset the admin, delete this document in the Firebase console.
-    match /config/admin {
-      allow read: if true;
-      allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['uid', 'username'])
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.username is string;
-      allow update, delete: if false;
-    }
   }
 }

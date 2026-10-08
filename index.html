@@ -64,11 +64,9 @@
       <form class="login" id="loginForm" autocomplete="on">
         <img src="assets/logo.png" alt="" class="login-logo" />
         <h2 id="panelTitle">Crew Access</h2>
-        <p class="hint" id="setupHint" hidden>First time here? Choose the admin username and password. Only this account will be able to edit teams and scores.</p>
-        <p class="hint" id="demoHint" hidden>Demo mode: Firebase isn't connected yet, so this login only works in this browser.</p>
+        <p class="hint" id="demoHint" hidden>Demo mode: Firebase isn't connected yet, so changes are saved in this browser only.</p>
         <label>Username<input id="username" required autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="30" /></label>
-        <label>Password<input type="password" id="password" required minlength="6" autocomplete="current-password" /></label>
-        <label id="confirmWrap" hidden>Confirm password<input type="password" id="confirm" autocomplete="new-password" /></label>
+        <label>Password<input type="password" id="password" required autocomplete="current-password" /></label>
         <p class="error" id="loginError" role="alert"></p>
         <button type="submit" class="btn primary" id="loginBtn">Sign in</button>
       </form>

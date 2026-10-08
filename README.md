@@ -8,7 +8,7 @@ It is a static site (HTML/CSS/JS, no build step) hosted on **Firebase Hosting**.
 - **Ctrl/Cmd + Shift + A**
 - adding `#admin` to the end of the URL
 
-The first time it's opened it asks you to create the one admin username and password. After that, the admin can add up to 5 teams, rename them, upload team photos (auto-cropped to a square), and change scores with −10/−5/−1/+1/+5/+10 buttons or by typing an exact value.
+Sign in with username **Admin** and the admin password. The admin can add up to 5 teams, rename them, upload team photos (auto-cropped to a square), and change scores with −10/−5/−1/+1/+5/+10 buttons or by typing an exact value.
 
 ## Demo mode
 
@@ -73,20 +73,15 @@ To try it locally, run `python3 -m http.server 8000` in this folder and open htt
 
 ### Part C: First use
 
-8. Open `https://<project-id>.web.app` and click the faint ✈ at the bottom. The first time, it shows **Create Admin Account**. Choose a username and password and click **Create admin & sign in**. That account is now the **only** admin, and from then on the ✈ shows a normal sign-in screen.
-   > Do this right after deploying. Until an admin account is created, whoever opens the ✈ first gets to create it.
+8. Open `https://<project-id>.web.app`, click the faint ✈ at the bottom, and sign in with username **Admin** and the admin password. The first sign-in automatically creates the admin login in Firebase.
 9. Add the **5 batches**. Click each team's circle to upload its photo, and set the starting scores.
 10. On event day, open the site on the projector or TV and press **F11** for full screen. Admins update scores from a phone or laptop, and the big screen updates within a second.
 
 ### Updating the site later
 Edit the files, then run `firebase deploy` again from the same folder. Scores and teams are kept, because they live in the database, not in the files.
 
-### Forgot the admin password / need to change the admin
-In the Firebase console:
-1. Go to **Databases and storage → Firestore → Data → `config` → `admin`** and delete that document.
-2. Go to **Security → Authentication → Users** and delete the old user.
-
-Then open the ✈ on the site again. It will show **Create Admin Account**.
+### Changing the admin password
+The password is checked against the hash `PASSWORD_HASH` in `js/store.js`. To change it, ask your developer to regenerate that hash. Then, in the Firebase console, go to **Security → Authentication → Users**, delete the `admin@aeroquest-admin.com` user, redeploy, and sign in with the new password.
 
 ### Optional: custom domain
 In the Firebase console, go to **Hosting → Add custom domain** (for example `aeroquest.aerowis.com`) and follow the DNS steps it shows.

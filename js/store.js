@@ -7,10 +7,24 @@ const FB = "https://www.gstatic.com/firebasejs/10.12.2";
 
 export const isDemo = !firebaseConfig.apiKey;
 
-// Firebase logins need an email, so a username is turned into a private fake address.
-// Nothing is ever emailed to it.
-const toEmail = (username) => `${username}@aeroquest-admin.com`;
-export const validUsername = (u) => /^[a-z0-9._-]{3,30}$/.test(u);
+// The single admin login is username "Admin" (any capitalisation).
+// Firebase logins need an email, so it maps to a private fake address; nothing is ever emailed.
+export const ADMIN_USERNAME = "admin";
+export const ADMIN_EMAIL = "admin@aeroquest-admin.com";
+
+// PBKDF2 hash of the admin password. Only used the very first time, to let the site create the
+// admin login in Firebase; after that Firebase itself checks the password.
+const PASSWORD_HASH = "13335e2b608a1fc1503647b114ba85d7250e52aadbbd75e2c7e3c515d6aa55d5";
+
+export async function passwordMatches(password) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt: enc.encode("aeroquest-admin-v1"), iterations: 150000, hash: "SHA-256" }, key, 256,
+  );
+  const hex = [...new Uint8Array(bits)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return hex === PASSWORD_HASH;
+}
 
 export async function createStore() {
   return isDemo ? createDemoStore() : createFirebaseStore();
@@ -26,24 +40,8 @@ async function createFirebaseStore() {
   const db = fs.getFirestore(app);
   const auth = au.getAuth(app);
   const teams = fs.collection(db, "teams");
-  // Single document naming the one admin. Firestore rules let it be created once, by the person it names.
-  const ownerDoc = fs.doc(db, "config", "admin");
 
   return {
-    watchAdmin(cb) {
-      return fs.onSnapshot(ownerDoc, (snap) => cb(snap.exists() ? snap.data() : null), () => cb(null));
-    },
-    async setupAdmin(username, password) {
-      let cred;
-      try {
-        cred = await au.createUserWithEmailAndPassword(auth, toEmail(username), password);
-      } catch (err) {
-        // A previous attempt may have created the login but not the admin record; finish it.
-        if (err.code !== "auth/email-already-in-use") throw err;
-        cred = await au.signInWithEmailAndPassword(auth, toEmail(username), password);
-      }
-      await fs.setDoc(ownerDoc, { uid: cred.user.uid, username });
-    },
     subscribe(onTeams, onError) {
       return fs.onSnapshot(
         teams,
@@ -52,9 +50,22 @@ async function createFirebaseStore() {
       );
     },
     onAuth(cb) {
-      return au.onAuthStateChanged(auth, (u) => cb(u ? { uid: u.uid, username: u.email.split("@")[0] } : null));
+      return au.onAuthStateChanged(auth, (u) => cb(u?.email === ADMIN_EMAIL ? { username: "Admin" } : null));
     },
-    login: (username, password) => au.signInWithEmailAndPassword(auth, toEmail(username), password),
+    async login(password) {
+      try {
+        await au.signInWithEmailAndPassword(auth, ADMIN_EMAIL, password);
+      } catch (err) {
+        // First ever login: the admin account doesn't exist in Firebase yet, so create it.
+        if (err.code !== "auth/invalid-credential" && err.code !== "auth/user-not-found") throw err;
+        if (!(await passwordMatches(password))) throw err;
+        try {
+          await au.createUserWithEmailAndPassword(auth, ADMIN_EMAIL, password);
+        } catch (e) {
+          throw e.code === "auth/email-already-in-use" ? err : e;
+        }
+      }
+    },
     logout: () => au.signOut(auth),
     addTeam: (name) => fs.addDoc(teams, { name, score: 0, photo: "", createdAt: Date.now() }),
     updateTeam: (id, fields) => fs.updateDoc(fs.doc(db, "teams", id), fields),
@@ -65,7 +76,6 @@ async function createFirebaseStore() {
 
 const KEY = "aeroquest-demo-teams-v2";
 const AUTH_KEY = "aeroquest-demo-session";
-const OWNER_KEY = "aeroquest-demo-owner";
 
 const SAMPLE = [
   ["Batch 01 · Falcons", 1240],
@@ -91,36 +101,22 @@ function createDemoStore() {
     try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {}
     emit();
   };
-  const ownerListeners = new Set();
   const get = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
   const set = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} };
-  const owner = () => { try { return JSON.parse(get(OWNER_KEY)); } catch { return null; } };
-  const user = () => (get(AUTH_KEY) ? { uid: get(AUTH_KEY), username: get(AUTH_KEY) } : null);
+  const user = () => (get(AUTH_KEY) ? { username: "Admin" } : null);
   const emitAuth = () => authListeners.forEach((cb) => cb(user()));
-  const emitOwner = () => ownerListeners.forEach((cb) => cb(owner() && { uid: owner().username, username: owner().username }));
   addEventListener("storage", (e) => {
     if (e.key === KEY) { data = read(); emit(); }
     if (e.key === AUTH_KEY) emitAuth();
-    if (e.key === OWNER_KEY) emitOwner();
   });
   const patch = (id, fn) => { data = data.map((t) => (t.id === id ? fn({ ...t }) : t)); save(); };
 
   return {
     subscribe(cb) { listeners.add(cb); cb(structuredClone(data)); return () => listeners.delete(cb); },
     onAuth(cb) { authListeners.add(cb); cb(user()); return () => authListeners.delete(cb); },
-    watchAdmin(cb) { ownerListeners.add(cb); emitOwner(); return () => ownerListeners.delete(cb); },
-    // Demo only: credentials live in this browser's storage. The real site uses Firebase Auth.
-    async setupAdmin(username, password) {
-      if (owner()) throw { code: "admin-exists" };
-      set(OWNER_KEY, JSON.stringify({ username, password }));
-      set(AUTH_KEY, username);
-      emitOwner();
-      emitAuth();
-    },
-    async login(username, password) {
-      const o = owner();
-      if (!o || o.username !== username || o.password !== password) throw { code: "auth/invalid-credential" };
-      set(AUTH_KEY, username);
+    async login(password) {
+      if (!(await passwordMatches(password))) throw { code: "auth/invalid-credential" };
+      set(AUTH_KEY, "1");
       emitAuth();
     },
     async logout() { set(AUTH_KEY, null); emitAuth(); },
