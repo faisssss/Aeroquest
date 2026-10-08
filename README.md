@@ -32,12 +32,12 @@ To try it locally, run `python3 -m http.server 8000` in this folder and open htt
    4. Note the **Project ID** shown under the project name, e.g. `aeroquest-1a2b3`. Your site address will be `https://<project-id>.web.app`.
 
 2. **Create the database**
-   1. In the left menu, go to **Build → Firestore Database → Create database**.
+   1. In the left menu, go to **Databases and storage → Firestore → Create database**. You can also type `Firestore` into **Search for products**. Older consoles call this **Build → Firestore Database**.
    2. Pick the **location** closest to you and click **Next**. This can't be changed later.
    3. Choose **Start in production mode**, then click **Create**.
 
 3. **Turn on admin login**
-   1. Go to **Build → Authentication → Get started**.
+   1. In the left menu, go to **Security → Authentication → Get started**. You can also search for `Authentication`. Older consoles call this **Build → Authentication**.
    2. On the **Sign-in method** tab, click **Email/Password**, switch on the first toggle (**Enable**), and click **Save**.
 
 4. **Create the admin account(s)**
@@ -46,7 +46,7 @@ To try it locally, run `python3 -m http.server 8000` in this folder and open htt
    3. In the user list, copy that user's **User UID** (a long code like `Xk9f2...`).
 
 5. **Mark the account as an admin.** Only accounts listed here can change scores.
-   1. Go to **Firestore Database → Data → + Start collection**.
+   1. Go to **Databases and storage → Firestore → Data → + Start collection**.
    2. For **Collection ID**, type `admins` and click **Next**.
    3. For **Document ID**, paste the **User UID** from step 4.
    4. Add one field: name `role`, type `string`, value `admin`. Click **Save**.
