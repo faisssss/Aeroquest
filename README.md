@@ -54,19 +54,17 @@ To try it locally, run `python3 -m http.server 8000` in this folder and open htt
    - download the branch as a ZIP from GitHub (**Code → Download ZIP**) and unzip it, or
    - run `git clone -b claude/quiz-app-live-score-ndvpya https://github.com/faisssss/Aeroquest.git`
 
-   Make sure the `js/firebase-config.js` there contains your values from step 4.
+   The Firebase config for the `aeroquest1` project is already filled in.
 
 7. **Open a terminal in that folder.** On Windows, use **Shift + right-click** in the folder and choose **Open PowerShell window here**. On Mac, right-click the folder and choose **New Terminal at Folder**. Then run:
 
    ```sh
    npm install -g firebase-tools
    firebase login
-   firebase use --add
    firebase deploy
    ```
 
    - `firebase login` opens the browser. Sign in with the same Google account.
-   - `firebase use --add`: pick your `aeroquest-…` project from the list, and when it asks for an alias, type `default`.
    - `firebase deploy` uploads the website **and** the security rules. When it finishes it prints **Hosting URL: https://\<project-id\>.web.app**. That is your live site.
 
    > On Windows, if you get *"running scripts is disabled on this system"*, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, answer **Y**, and try again.
